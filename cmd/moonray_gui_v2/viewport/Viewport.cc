@@ -17,6 +17,11 @@
 
 #include <GLFW/glfw3.h>
 
+#ifdef MOONRAY_GUI_CLIPBOARD
+#include <clip.h>
+#include <algorithm>
+#endif
+
 using namespace moonray;
 
 namespace {
@@ -41,7 +46,7 @@ static void glfw_error_callback(int error, const char* description)
     std::cerr << "GLFW Error " << error << ": " << description << std::endl;
 }
 
-void 
+void
 keyCallback(GLFWwindow* window, const int key, const int scancode, const int action, const int mods)
 {
     // Get the Window instance from the user pointer
@@ -120,7 +125,7 @@ void setGlfwWindowHints()
 #endif
 }
 
-Viewport::Viewport(CameraType initialCamType, 
+Viewport::Viewport(CameraType initialCamType,
                    const std::string& snapPath,
                    const bool showTileProgress,
                    DenoiserManager* denoiserManager)
@@ -131,7 +136,7 @@ Viewport::Viewport(CameraType initialCamType,
 ,   mOrbitCam(std::make_unique<OrbitCam>())
 ,   mFreeCam(std::make_unique<FreeCam>())
 ,   mShowTileProgress(showTileProgress)
-{    
+{
     glfwSetErrorCallback(glfw_error_callback);
     if (!glfwInit()) {
         throw std::runtime_error("ERROR: Failed to initialize GLFW");
@@ -141,9 +146,9 @@ Viewport::Viewport(CameraType initialCamType,
 
     // ---- Create window with graphics context ----
     // The viewport will be resized later when we get the first framebuffer from the renderer.
-    // GLFW DOCS: "To create a full screen window, you need to specify the monitor the 
+    // GLFW DOCS: "To create a full screen window, you need to specify the monitor the
     // window will cover. If no monitor is specified, the window will be windowed mode", and also
-    // "...you can specify another window whose context the new one should share its objects 
+    // "...you can specify another window whose context the new one should share its objects
     // (textures, vertex and element buffers, etc.) with"
     mGLFWWindow = glfwCreateWindow(1, 1, "MoonRay GUI", /*monitor*/ nullptr, /*window to share with*/ nullptr);
     if (!mGLFWWindow) {
@@ -175,7 +180,7 @@ Viewport::~Viewport()
     // We must destroy the Interface before terminating glfw
     // because Interface needs to do some glfw cleanup first
     mInterface.reset();
-    
+
     // Clean up GLFW resources
     if (mGLFWWindow) {
         glfwDestroyWindow(mGLFWWindow);
@@ -259,7 +264,7 @@ void Viewport::resize(const int width, const int height)
 
         if (!mInitialResizeDone) {
             // Resize the window to fit the image on the first resize only
-            // The size of the viewport should initially be the size of the 
+            // The size of the viewport should initially be the size of the
             // render, plus room for any stationary ui elements
             int vpWidth = width + mInterface->getRightDockWidth();
             int vpHeight = height + mInterface->getBottomDockHeight();
@@ -269,7 +274,7 @@ void Viewport::resize(const int width, const int height)
 
         // Update the opengl render size
         glViewport(0, 0, width, height);
-        
+
         // Resize the actual image display
         mInterface->resizeImage(width, height);
     }
@@ -375,8 +380,8 @@ Viewport::inspect(int x, int y) const
                         return l0.second < l1.second;
                     });
         for (unsigned int i = 0; i < rdlLights.size(); ++i) {
-            lightPickResults += rdlLights[i].first->getName() + ": " + 
-                                std::to_string(rdlLights[i].second) + ", " + 
+            lightPickResults += rdlLights[i].first->getName() + ": " +
+                                std::to_string(rdlLights[i].second) + ", " +
                                 rdlLights[i].first->getSceneClass().getName() + "\n";
         }
 
@@ -407,7 +412,7 @@ Viewport::inspect(int x, int y) const
     return "";
 }
 
-scene_rdl2::math::Color 
+scene_rdl2::math::Color
 Viewport::getPixelColor(const int x, const int y) const
 {
     // Bounds check
@@ -482,8 +487,8 @@ Viewport::nextRenderOutput()
     mRenderOutputIndex = scene_rdl2::math::clamp(mRenderOutputIndex + 1, -1, numOutputs - 1);
 }
 
-std::string 
-Viewport::getRenderOutputName() const 
+std::string
+Viewport::getRenderOutputName() const
 {
     if (!mRenderContext) { return ""; }
     if (mRenderOutputIndex == -1) { return "render buffer"; }
@@ -507,6 +512,82 @@ Viewport::setPathVisualizerPixel()
         }
     }
 }
+
+#ifdef MOONRAY_GUI_CLIPBOARD
+void Viewport::copyCurrentBufferToClipboard() const
+{
+    const GLuint textureHandle = getDisplayTexture();
+    if (textureHandle == 0)
+    {
+        Logger::error("could not get texture handle");
+        return;
+    }
+
+    int width = 0, height = 0;
+
+    glfwMakeContextCurrent(mGLFWWindow);
+
+    // Flush unrelated GL errors
+    while (glGetError() != GL_NO_ERROR) {}
+
+    glBindTexture(GL_TEXTURE_2D, textureHandle);
+
+    glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &width);
+    glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &height);
+
+    if (height <= 0 || width <= 0)
+    {
+        Logger::error("invalid dimensions");
+        return;
+    }
+
+    std::vector<uint32_t> pixels;
+    pixels.resize(width * height);
+
+    glGetTexImage(GL_TEXTURE_2D, 0, GL_RGBA, GL_UNSIGNED_BYTE, pixels.data());
+    glBindTexture(GL_TEXTURE_2D, 0);
+
+
+    if (glGetError() != GL_NO_ERROR)
+    {
+        Logger::error("GL reported an error");
+        return;
+    }
+
+    // flipping pixels vertically in-place
+    for (int y = 0; y < height / 2; ++y)
+    {
+        auto top_it = pixels.begin() + y * width;
+        auto bottom_it = pixels.begin() + (height - 1 - y) * width;
+        std::swap_ranges(top_it, top_it + width, bottom_it);
+    }
+
+    clip::image_spec spec;
+    spec.width = width;
+    spec.height = height;
+    spec.bits_per_pixel = 32;
+    spec.bytes_per_row = width * sizeof(uint32_t);
+    spec.red_mask = 0xff;
+    spec.green_mask = 0xff00;
+    spec.blue_mask = 0xff0000;
+    spec.alpha_mask = 0xff000000;
+    spec.red_shift = 0;
+    spec.green_shift = 8;
+    spec.blue_shift = 16;
+    spec.alpha_shift = 24;
+
+    clip::image snapshot(pixels.data(), spec);
+    if (!clip::set_image(snapshot))
+        Logger::error("failed to copy snapshot/buffer to clipboard");
+
+}
+#else
+void Viewport::copyCurrentBufferToClipboard() const
+{
+    Logger::error("clipboard is not enabled for this build");
+    return;
+}
+#endif
 
 void
 Viewport::pathVisualizerToggleOn()
@@ -551,6 +632,7 @@ Viewport::handlePressAction(const Action action)
 
         // Snapshot actions
         case ACTION_SNAPSHOT_TAKE:                  takeASnapshot();                                              break;
+        case ACTION_COPY_BUFFER_TO_CLIPBOARD:       copyCurrentBufferToClipboard();                               break;
 
         // Channel actions
         case ACTION_CHANNEL_TOGGLE_RGB:             toggleDebugMode(RGB);                   mNeedsRefresh = true; break;
@@ -561,7 +643,7 @@ Viewport::handlePressAction(const Action action)
         case ACTION_CHANNEL_TOGGLE_LUMINANCE:       toggleDebugMode(LUMINANCE);             mNeedsRefresh = true; break;
         case ACTION_CHANNEL_TOGGLE_RGB_NORMALIZED:  toggleDebugMode(RGB_NORMALIZED);        mNeedsRefresh = true; break;
         case ACTION_CHANNEL_TOGGLE_NUM_SAMPLES:     toggleDebugMode(NUM_SAMPLES);           mNeedsRefresh = true; break;
-        
+
         // Image adjustment actions
         case ACTION_EXPOSURE_ADJUST:                startAdjustExposure();                                        break;
         case ACTION_EXPOSURE_INCREASE:              increaseExposure();                     mNeedsRefresh = true; break;
@@ -607,7 +689,7 @@ Viewport::handleReleaseAction(const Action action, bool wasQuickPress)
         case ACTION_IMAGE2D_PAN:
             mPanImage = false;
             break;
-        default: 
+        default:
             break;
     }
 }
@@ -642,17 +724,17 @@ Viewport::handleKeyEvent(const int key, const int scancode, const int type, cons
     // First, check if the interface wants to explicitly
     // handle this action (currently, just for opening/closing windows)
     // NOTE: We have automatic ImGui key handling enabled in the Interface,
-    //       so we don't need to explicitly handle any window interactions 
+    //       so we don't need to explicitly handle any window interactions
     //       (ex: moving a slider) here.
     if (type == GLFW_PRESS && mInterface->handleKeyPressEvent(action)) { return; }
 
-    // Otherwise, unless ImGui wants to automatically 
-    // capture this key event, this is a viewport-specific 
+    // Otherwise, unless ImGui wants to automatically
+    // capture this key event, this is a viewport-specific
     // action, and should be handled here
     if (!ImGui::GetIO().WantCaptureKeyboard) {
         if (type == GLFW_PRESS) {
             // key press handling
-            handleKeyPressEvent(action); 
+            handleKeyPressEvent(action);
         } else if (type == GLFW_RELEASE) {
             // key release handling
             handleKeyReleaseEvent(action);
@@ -681,7 +763,7 @@ Viewport::handleMousePressEvent(const Action action)
     handlePressAction(action);
 }
 
-void 
+void
 Viewport::handleMouseReleaseEvent(const Action action)
 {
     // End timing for quick click detection
@@ -753,7 +835,7 @@ moonray::denoiser::DenoiserMode Viewport::getDenoiserMode() const { return mDeno
 
 DenoisingBufferMode Viewport::getDenoisingBufferMode() const { return mDenoiserManager->getDenoisingBufferMode(); }
 
-GLuint 
+GLuint
 Viewport::getDisplayTexture() const {
     GLuint textureHandle = mTextureHandle;
 

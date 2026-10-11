@@ -43,6 +43,7 @@ KeyboardBindings::KeyboardBindings()
     mKeyBindings.insert(KeyModPair(GLFW_KEY_U, MOD_NONE), ACTION_CAM_SET_UP_VECTOR);
     mKeyBindings.insert(KeyModPair(GLFW_KEY_V, MOD_NONE), ACTION_WINDOW_TOGGLE_PATH_VISUALIZER);
     mKeyBindings.insert(KeyModPair(GLFW_KEY_W, MOD_NONE), ACTION_CAM_FORWARD);
+    mKeyBindings.insert(KeyModPair(GLFW_KEY_J, MOD_NONE), ACTION_COPY_BUFFER_TO_CLIPBOARD);
 
     mKeyBindings.insert(KeyModPair(GLFW_KEY_PERIOD, MOD_NONE), ACTION_RENDER_OUTPUT_NEXT);
     mKeyBindings.insert(KeyModPair(GLFW_KEY_COMMA, MOD_NONE), ACTION_RENDER_OUTPUT_PREV);

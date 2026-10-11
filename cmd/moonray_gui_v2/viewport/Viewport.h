@@ -271,6 +271,9 @@ private:
     // Select the pixel for the path visualizer
     void setPathVisualizerPixel();
 
+    // Take screenshot and copy to clipboard
+    void copyCurrentBufferToClipboard() const;
+
     /// ---------------------------------------------------------------///
 
     GLFWwindow* mGLFWWindow {nullptr};                          // Pointer to the GLFW window
