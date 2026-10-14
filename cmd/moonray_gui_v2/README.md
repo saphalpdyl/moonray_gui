@@ -104,7 +104,7 @@ Here are the hotkey mappings (the changed hotkeys have stars next to them):
 | Save Image* | `CTRL`+`S` | Didn't exist in v1 |
 | Snapshot Take | `K` | |
 | Tile Progress Toggle* | `T` | Previously `P` |
-| Copy current snapshot/buffer to clipboard* | `J` | Didn't exist in v1. requires `MOONRAY_GUI_CLIPBOARD` to be explicitly  enabled |
+| Copy current snapshot/buffer to clipboard* | `J` | Didn't exist in v1. Requires the `MOONRAY_GUI_CLIPBOARD` CMake build option to be explicitly enabled |
 
 
 ## Configuration Files
