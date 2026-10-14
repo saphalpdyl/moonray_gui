@@ -102,7 +102,7 @@ if (NOT OpenColorIO_FOUND)
     target_compile_definitions(${target} PRIVATE DISABLE_OCIO)
 endif()
 
-# Installs cross-platform clipboard library daclip/clip for copying viewport screenshots
+# Installs cross-platform clipboard library dacap/clip for copying viewport screenshots
 # If disabled, the keybind(J) will call a stub that warns that clipboard is disabled
 if(MOONRAY_GUI_CLIPBOARD)
     set(CLIP_EXAMPLES OFF)

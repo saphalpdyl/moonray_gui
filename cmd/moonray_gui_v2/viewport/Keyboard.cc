@@ -30,6 +30,7 @@ KeyboardBindings::KeyboardBindings()
     mKeyBindings.insert(KeyModPair(GLFW_KEY_G, MOD_NONE), ACTION_WINDOW_TOGGLE_KEY_BINDINGS);
     mKeyBindings.insert(KeyModPair(GLFW_KEY_H, MOD_NONE), ACTION_PRINT_KEY_BINDINGS);
     mKeyBindings.insert(KeyModPair(GLFW_KEY_I, MOD_NONE), ACTION_WINDOW_TOGGLE_SCENE_INSPECTOR);
+    mKeyBindings.insert(KeyModPair(GLFW_KEY_J, MOD_NONE), ACTION_COPY_BUFFER_TO_CLIPBOARD);
     mKeyBindings.insert(KeyModPair(GLFW_KEY_K, MOD_NONE), ACTION_SNAPSHOT_TAKE);
     mKeyBindings.insert(KeyModPair(GLFW_KEY_L, MOD_NONE), ACTION_FAST_PROGRESSIVE_TOGGLE);
     mKeyBindings.insert(KeyModPair(GLFW_KEY_M, MOD_NONE), ACTION_CAM_PRINT_MATRICES);
@@ -43,7 +44,6 @@ KeyboardBindings::KeyboardBindings()
     mKeyBindings.insert(KeyModPair(GLFW_KEY_U, MOD_NONE), ACTION_CAM_SET_UP_VECTOR);
     mKeyBindings.insert(KeyModPair(GLFW_KEY_V, MOD_NONE), ACTION_WINDOW_TOGGLE_PATH_VISUALIZER);
     mKeyBindings.insert(KeyModPair(GLFW_KEY_W, MOD_NONE), ACTION_CAM_FORWARD);
-    mKeyBindings.insert(KeyModPair(GLFW_KEY_J, MOD_NONE), ACTION_COPY_BUFFER_TO_CLIPBOARD);
 
     mKeyBindings.insert(KeyModPair(GLFW_KEY_PERIOD, MOD_NONE), ACTION_RENDER_OUTPUT_NEXT);
     mKeyBindings.insert(KeyModPair(GLFW_KEY_COMMA, MOD_NONE), ACTION_RENDER_OUTPUT_PREV);

@@ -517,8 +517,7 @@ Viewport::setPathVisualizerPixel()
 void Viewport::copyCurrentBufferToClipboard() const
 {
     const GLuint textureHandle = getDisplayTexture();
-    if (textureHandle == 0)
-    {
+    if (textureHandle == 0) {
         Logger::error("could not get texture handle");
         return;
     }
@@ -535,8 +534,7 @@ void Viewport::copyCurrentBufferToClipboard() const
     glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_WIDTH, &width);
     glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &height);
 
-    if (height <= 0 || width <= 0)
-    {
+    if (height <= 0 || width <= 0) {
         Logger::error("invalid dimensions");
         return;
     }
@@ -548,15 +546,14 @@ void Viewport::copyCurrentBufferToClipboard() const
     glBindTexture(GL_TEXTURE_2D, 0);
 
 
-    if (glGetError() != GL_NO_ERROR)
-    {
-        Logger::error("GL reported an error");
+    GLenum err = glGetError();
+    if (err != GL_NO_ERROR) {
+        Logger::error("GL reported an error after copying the display texture: 0x", std::hex, err);
         return;
     }
 
     // flipping pixels vertically in-place
-    for (int y = 0; y < height / 2; ++y)
-    {
+    for (int y = 0; y < height / 2; ++y) {
         auto top_it = pixels.begin() + y * width;
         auto bottom_it = pixels.begin() + (height - 1 - y) * width;
         std::swap_ranges(top_it, top_it + width, bottom_it);
@@ -577,15 +574,16 @@ void Viewport::copyCurrentBufferToClipboard() const
     spec.alpha_shift = 24;
 
     clip::image snapshot(pixels.data(), spec);
-    if (!clip::set_image(snapshot))
+    if (!clip::set_image(snapshot)) {
         Logger::error("failed to copy snapshot/buffer to clipboard");
+        return;
+    }
 
+    std::cout << "Copied snapshot/buffer to clipboard" << std::endl;
 }
 #else
-void Viewport::copyCurrentBufferToClipboard() const
-{
+void Viewport::copyCurrentBufferToClipboard() const {
     Logger::error("clipboard is not enabled for this build");
-    return;
 }
 #endif
 

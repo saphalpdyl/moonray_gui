@@ -271,7 +271,7 @@ private:
     // Select the pixel for the path visualizer
     void setPathVisualizerPixel();
 
-    // Take screenshot and copy to clipboard
+    // Copy snapshot/buffer to clipboard
     void copyCurrentBufferToClipboard() const;
 
     /// ---------------------------------------------------------------///
