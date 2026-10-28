@@ -518,7 +518,7 @@ void Viewport::copyCurrentBufferToClipboard() const
 {
     const GLuint textureHandle = getDisplayTexture();
     if (textureHandle == 0) {
-        Logger::error("could not get texture handle");
+        Logger::error("Could not get texture handle");
         return;
     }
 
@@ -535,7 +535,7 @@ void Viewport::copyCurrentBufferToClipboard() const
     glGetTexLevelParameteriv(GL_TEXTURE_2D, 0, GL_TEXTURE_HEIGHT, &height);
 
     if (height <= 0 || width <= 0) {
-        Logger::error("invalid dimensions");
+        Logger::error("Invalid dimensions");
         return;
     }
 
@@ -575,15 +575,15 @@ void Viewport::copyCurrentBufferToClipboard() const
 
     clip::image snapshot(pixels.data(), spec);
     if (!clip::set_image(snapshot)) {
-        Logger::error("failed to copy snapshot/buffer to clipboard");
+        Logger::error("Failed to copy image data to clipboard");
         return;
     }
 
-    std::cout << "Copied snapshot/buffer to clipboard" << std::endl;
+    std::cout << "Copied displayed image to clipboard" << std::endl;
 }
 #else
 void Viewport::copyCurrentBufferToClipboard() const {
-    Logger::error("clipboard is not enabled for this build");
+    Logger::error("Clipboard is not enabled for this build");
 }
 #endif
 
